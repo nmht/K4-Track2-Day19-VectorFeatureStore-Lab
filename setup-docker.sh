@@ -56,12 +56,14 @@ else
 fi
 
 # ── 3. Python venv (same as lite) ───────────────────────────────────────
-if command -v python3 >/dev/null 2>&1; then
+if command -v py >/dev/null 2>&1; then
+  PYTHON_CMD="py"
+elif command -v python3 >/dev/null 2>&1; then
   PYTHON_CMD="python3"
 elif command -v python >/dev/null 2>&1; then
   PYTHON_CMD="python"
 else
-  echo "[docker] python3/python not found."
+  echo "[docker] py/python3/python not found."
   exit 1
 fi
 
@@ -73,7 +75,11 @@ if [ ! -d ".venv" ]; then
   fi
 fi
 # shellcheck source=/dev/null
-source .venv/bin/activate
+if [ -f ".venv/Scripts/activate" ]; then
+  source .venv/Scripts/activate
+else
+  source .venv/bin/activate
+fi
 
 # ── 4. Install lite + docker extras ─────────────────────────────────────
 NEED_DILL_OVERRIDE=$(python -c 'import sys; print(1 if sys.version_info >= (3,14) else 0)')
@@ -130,7 +136,7 @@ cat <<EOF
 
 Activate the venv and continue:
 
-    source .venv/bin/activate
+    source .venv/Scripts/activate  # on Windows, or .venv/bin/activate on Linux/Mac
     make api       # start FastAPI on :8000
     make lab       # open Jupyter on :8888
 

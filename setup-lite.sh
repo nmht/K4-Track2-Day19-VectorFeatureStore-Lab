@@ -9,12 +9,14 @@ echo "[lite] Stack: fastembed + qdrant-client[memory] + rank-bm25 + feast(sqlite
 echo
 
 # ── 1. Python ───────────────────────────────────────────────────────────
-if command -v python3 >/dev/null 2>&1; then
+if command -v py >/dev/null 2>&1; then
+  PYTHON_CMD="py"
+elif command -v python3 >/dev/null 2>&1; then
   PYTHON_CMD="python3"
 elif command -v python >/dev/null 2>&1; then
   PYTHON_CMD="python"
 else
-  echo "[lite] python3/python not found. Install Python 3.10+."
+  echo "[lite] py/python3/python not found. Install Python 3.10+."
   exit 1
 fi
 PY_VER=$($PYTHON_CMD -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
@@ -31,7 +33,11 @@ if [ ! -d ".venv" ]; then
   fi
 fi
 # shellcheck source=/dev/null
-source .venv/bin/activate
+if [ -f ".venv/Scripts/activate" ]; then
+  source .venv/Scripts/activate
+else
+  source .venv/bin/activate
+fi
 
 # ── 3. Install deps ─────────────────────────────────────────────────────
 # `uv venv` may pick a different interpreter than the system `python3`, so the
@@ -83,7 +89,7 @@ cat <<EOF
 
 [lite] Done. Activate the venv and start working:
 
-    source .venv/bin/activate
+    source .venv/Scripts/activate  # on Windows, or .venv/bin/activate on Linux/Mac
     make api       # start FastAPI on :8000
     make lab       # open Jupyter on :8888
     make benchmark # Precision@10 + latency table

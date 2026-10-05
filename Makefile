@@ -2,12 +2,20 @@
 ## Two paths: lightweight (default, no Docker) and full Docker.
 
 VENV     := .venv
-PY       := $(VENV)/bin/python
-PIP      := $(VENV)/bin/pip
-JUPYTER  := $(VENV)/bin/jupyter
-JUPYTEXT := $(VENV)/bin/jupytext
-UVICORN  := $(VENV)/bin/uvicorn
-PYTEST   := $(VENV)/bin/pytest
+ifeq ($(OS),Windows_NT)
+    VENV_BIN := $(VENV)/Scripts
+    EXE      := .exe
+else
+    VENV_BIN := $(VENV)/bin
+    EXE      :=
+endif
+
+PY       := $(VENV_BIN)/python$(EXE)
+PIP      := $(VENV_BIN)/pip$(EXE)
+JUPYTER  := $(VENV_BIN)/jupyter$(EXE)
+JUPYTEXT := $(VENV_BIN)/jupytext$(EXE)
+UVICORN  := $(VENV_BIN)/uvicorn$(EXE)
+PYTEST   := $(VENV_BIN)/pytest$(EXE)
 
 .DEFAULT_GOAL := help
 
@@ -20,7 +28,11 @@ help: ## Show this help
 # ─────────────────────────────────────────────────────────────
 
 setup-lite: ## [lite] Create venv + install + seed corpus + smoke test
+ifeq ($(OS),Windows_NT)
+	@powershell -ExecutionPolicy Bypass -File setup-lite.ps1
+else
 	@bash setup-lite.sh
+endif
 
 verify-lite: ## [lite] 5-second smoke test (Qdrant memory + BM25 + Feast SQLite)
 	@$(PY) scripts/verify_lite.py
@@ -49,7 +61,7 @@ notebooks: ## [both] Execute ALL notebooks headless (what the grader runs)
 	@$(JUPYTEXT) --to notebook --update notebooks/[0-9]*.py >/dev/null 2>&1 || true
 	@for nb in notebooks/[0-9]*.ipynb; do \
 		printf '%-42s' "$$nb"; \
-		PATH="$(PWD)/$(VENV)/bin:$$PATH" $(VENV)/bin/jupyter nbconvert --to notebook \
+		PATH="$(PWD)/$(VENV_BIN):$$PATH" $(JUPYTER) nbconvert --to notebook \
 			--execute --inplace "$$nb" --ExecutePreprocessor.timeout=900 \
 			>/dev/null 2>&1 && echo PASS || echo FAIL; \
 	done
