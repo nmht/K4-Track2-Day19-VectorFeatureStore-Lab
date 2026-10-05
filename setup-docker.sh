@@ -56,11 +56,20 @@ else
 fi
 
 # ── 3. Python venv (same as lite) ───────────────────────────────────────
+if command -v python3 >/dev/null 2>&1; then
+  PYTHON_CMD="python3"
+elif command -v python >/dev/null 2>&1; then
+  PYTHON_CMD="python"
+else
+  echo "[docker] python3/python not found."
+  exit 1
+fi
+
 if [ ! -d ".venv" ]; then
   if command -v uv >/dev/null 2>&1; then
     uv venv .venv
   else
-    python3 -m venv .venv
+    $PYTHON_CMD -m venv .venv
   fi
 fi
 # shellcheck source=/dev/null
