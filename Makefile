@@ -44,8 +44,13 @@ api: ## [lite] Start FastAPI /search on http://localhost:8000
 	@$(UVICORN) app.main:app --reload --port 8000
 
 lab: ## [lite] Open Jupyter Lab on http://localhost:8888
+ifeq ($(OS),Windows_NT)
+	-@$(PY) -m jupytext --to notebook --update notebooks/01_embeddings_index.py notebooks/02_hybrid_search_rrf.py notebooks/03_search_api_benchmark.py notebooks/04_feast_feature_store.py notebooks/05_filtered_search.py notebooks/06_agent_retrieval.py notebooks/07_semantic_cache.py notebooks/08_feature_engineering.py
+	@$(JUPYTER) lab --notebook-dir=notebooks --ServerApp.token='' --no-browser
+else
 	@$(JUPYTEXT) --to notebook --update notebooks/[0-9]*.py 2>/dev/null || true
 	@$(JUPYTER) lab --notebook-dir=notebooks --ServerApp.token='' --no-browser
+endif
 
 benchmark: ## [both] Precision@10 (keyword/semantic/hybrid) + P99 latency table
 	@$(PY) scripts/benchmark.py
@@ -58,6 +63,9 @@ gen-advanced: ## [both] Generate data for the advanced missions (NB6 + NB8)
 	@$(PY) scripts/gen_spend.py
 
 notebooks: ## [both] Execute ALL notebooks headless (what the grader runs)
+ifeq ($(OS),Windows_NT)
+	@$(PY) scripts/run_notebooks.py
+else
 	@$(JUPYTEXT) --to notebook --update notebooks/[0-9]*.py >/dev/null 2>&1 || true
 	@for nb in notebooks/[0-9]*.ipynb; do \
 		printf '%-42s' "$$nb"; \
@@ -65,14 +73,19 @@ notebooks: ## [both] Execute ALL notebooks headless (what the grader runs)
 			--execute --inplace "$$nb" --ExecutePreprocessor.timeout=900 \
 			>/dev/null 2>&1 && echo PASS || echo FAIL; \
 	done
+endif
 
 clean-lite: ## [lite] Wipe venv + data + Feast registry
+ifeq ($(OS),Windows_NT)
+	@powershell -ExecutionPolicy Bypass -Command "Remove-Item -Recurse -Force .venv, data/corpus_vn.jsonl, data/golden_set.jsonl, data/qdrant_storage, data/agent_queries.jsonl, app/feast_repo/data, app/feast_repo/registry.db, app/feast_repo/online_store.db, app/feast_repo_ondemand/data, app/feast_repo_ondemand/registry.db, app/feast_repo_ondemand/online_store.db, notebooks/*.ipynb -ErrorAction SilentlyContinue"
+else
 	rm -rf $(VENV) data/corpus_vn.jsonl data/golden_set.jsonl data/qdrant_storage \
 	       data/agent_queries.jsonl \
 	       app/feast_repo/data app/feast_repo/registry.db app/feast_repo/online_store.db \
 	       app/feast_repo_ondemand/data app/feast_repo_ondemand/registry.db \
 	       app/feast_repo_ondemand/online_store.db \
 	       notebooks/*.ipynb notebooks/.ipynb_checkpoints
+endif
 
 # ─────────────────────────────────────────────────────────────
 # Docker path (full stack: Qdrant + Redis + Postgres)
