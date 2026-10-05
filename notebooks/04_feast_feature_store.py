@@ -22,6 +22,9 @@ from pathlib import Path
 
 import polars as pl
 
+import os, shutil, sys
+FEAST_BIN = shutil.which("feast") or os.path.join(os.path.dirname(sys.executable), "feast.exe" if sys.platform == "win32" else "feast")
+
 REPO_ROOT = Path(_setup.__file__).resolve().parent.parent
 FEAST_DIR = REPO_ROOT / "app" / "feast_repo"
 FEAST_DATA = FEAST_DIR / "data"
@@ -80,13 +83,10 @@ for p in sorted(FEAST_DATA.glob("*.parquet")):
 # ## 2. `feast apply` — register 3 feature views với metadata registry
 #
 # `app/feast_repo/feature_views.py` đã định nghĩa 3 feature views (xem file đó).
-# Chạy `feast apply` để Feast đọc file definition và ghi vào `registry.db`.
-
-# %%
 res = subprocess.run(
-    ["feast", "apply"],
+    [FEAST_BIN, "apply"],
     cwd=str(FEAST_DIR),
-    capture_output=True, text=True, check=False,
+    capture_output=True, text=True, encoding="utf-8", errors="replace", check=False,
 )
 print("STDOUT:")
 print(res.stdout)
@@ -104,9 +104,9 @@ assert res.returncode == 0, f"feast apply failed: {res.stderr}"
 # %%
 end_dt = NOW.strftime("%Y-%m-%dT%H:%M:%S")
 res = subprocess.run(
-    ["feast", "materialize-incremental", end_dt],
+    [FEAST_BIN, "materialize-incremental", end_dt],
     cwd=str(FEAST_DIR),
-    capture_output=True, text=True, check=False,
+    capture_output=True, text=True, encoding="utf-8", errors="replace", check=False,
 )
 print(res.stdout[-1500:])
 if res.stderr:

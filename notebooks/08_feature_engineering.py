@@ -156,13 +156,15 @@ print(f"\n'lift ảo' sẽ mất khi lên production: {auc_lat - auc_pit:+.3f} A
 # > **module**, không phải decorator (docs vẫn ghi import ngắn). Phải dùng
 # > `from feast.on_demand_feature_view import on_demand_feature_view`.
 
-# %%
+import os, shutil, sys
+FEAST_BIN = shutil.which("feast") or os.path.join(os.path.dirname(sys.executable), "feast.exe" if sys.platform == "win32" else "feast")
+
 repo = ROOT / "app" / "feast_repo_ondemand"
-subprocess.run(["python", str(ROOT / "scripts" / "gen_spend.py")], check=True,
-               capture_output=True)
-subprocess.run(["feast", "apply"], cwd=repo, check=True, capture_output=True)
-subprocess.run(["feast", "materialize-incremental", "2027-01-01T00:00:00"],
-               cwd=repo, check=True, capture_output=True)
+subprocess.run([sys.executable, str(ROOT / "scripts" / "gen_spend.py")], check=True,
+               capture_output=True, encoding="utf-8", errors="replace")
+subprocess.run([FEAST_BIN, "apply"], cwd=repo, check=True, capture_output=True, encoding="utf-8", errors="replace")
+subprocess.run([FEAST_BIN, "materialize-incremental", "2027-01-01T00:00:00"],
+               cwd=repo, check=True, capture_output=True, encoding="utf-8", errors="replace")
 print("feast apply + materialize OK")
 
 # %%
